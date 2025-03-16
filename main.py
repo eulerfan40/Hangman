@@ -4,7 +4,7 @@ from sty import fg, ef # For cross-platform color coding.
 
 OS_IS_WINDOWS = (sys.platform == "win32") # Needed for a check in the cross-platform clear screen function.
 
-FRAMES_FILE, WORDS_FILE = "Hangman/frames.txt", "Hangman/words.txt"
+FRAMES_FILE, WORDS_FILE = "files/frames.txt", "files/words.txt"
 
 CRES, SRES, RES = fg.rs, ef.rs, fg.rs + ef.rs # Resets: color-only, style-only, Both.
 RED, BLU, GRN, YEL, MAG, CYAN = fg.red, fg.blue, fg.green, fg.yellow, fg.magenta, fg.cyan # Colors
