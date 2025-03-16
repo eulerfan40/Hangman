@@ -10,9 +10,6 @@ CRES, SRES, RES = fg.rs, ef.rs, fg.rs + ef.rs # Resets: color-only, style-only, 
 RED, BLU, GRN, YEL, MAG, CYAN = fg.red, fg.blue, fg.green, fg.yellow, fg.magenta, fg.cyan # Colors
 BOLD, ITAL, UNDL = ef.bold, ef.italic, ef.underl # Styles
 
-def read_file(file_name: str) -> List[str]:
-    return [line.lower() for line in open(file_name, "r")] # Return list of lines, all lowercase.
-
 def group_frames(frame_list: List[str],  frame_exit: str) -> List[str]: # 
     result, buffer = [], "" # We need a buffer since we are going to append multiple lines at once.
     for line in frame_list:
@@ -35,7 +32,7 @@ def title(color: str = RES, end: str = "\n"):
 def menu() -> bool:
     while (True):
         title(BLU + BOLD)
-        print(f"\n{BOLD}{MAG}Welcome to hangman. You have two options:")
+        print(f"\n{BOLD}{MAG}Welcome to hangman. Can you guess the hidden word?")
         print(f"\n1 - {SRES}{YEL}Play")
         print(f"{BOLD}{MAG}2 - {SRES}{YEL}Quit")
         answer = input(f"\n{SRES}{CYAN}Please choose an option. >>> {CRES}")
@@ -46,9 +43,11 @@ def menu() -> bool:
             print(f"\n{RED}Please input either 1 or 2, or type {BOLD}{CRES}\"Play\"{SRES}{RED} or {BOLD}{CRES}\"Quit\"")
             input(f"{SRES}{CYAN}Press any key to continue >>> {CRES}")
             continue
+
         # The user chose to play.    
         elif answer == "1" or answer.lower() == "play":
             return True
+        
         # The user chose to end the program.
         elif answer == "2" or answer.lower() == "quit":
             print(f"{BOLD}{MAG}\nGoodbye!{RES}")
@@ -88,7 +87,7 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
     guesses = 0 # The player begins the game haveing not made any guesses.
     guessed_letters = [] # The player begins the game having not guessed any letters.
     correct_guessed_letters = [] # The player begins the word having not correctly guessed any letters.
-    word = random.choice(read_file(WORDS_FILE)) # Set random word.
+    word = random.choice([line.rstrip("\n") for line in open(WORDS_FILE, "r")]) # Set random word.
 
     while (guesses < allowed_guesses):
         frame_index = len(guessed_letters) - len(correct_guessed_letters) # Frame index = incorrect guesses
@@ -102,24 +101,27 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
         guess = input(f"{CYAN}\nWhat is your guess? >>> {CRES}") 
 
         is_valid_input = is_input_valid(guess.lower(), allowed_letters) and len(guess) == 1
-        is_new_guess = not already_guessed(guess, guessed_letters)
-        
+        is_new_guess = not already_guessed(guess, guessed_letters)        
         if not is_new_guess: # They've already guessed this letter
             print(f"\n{YEL}{BOLD}You already guessed that letter.{SRES}")
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
+
         if not is_valid_input: # It's not a valid input and/or it's longer than one letter.
             print(f"\n{RED}{BOLD}Please input a valid letter.{SRES}")
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
+
         if is_valid_input and is_new_guess: # Check whether it is a valid new guess.
             if is_guess_correct(guess, word) and all(letter in correct_guessed_letters for letter in word): # Word complete.
                 print(f"\n{GRN}{BOLD}Congratulations! {SRES}You successfully guessed the word.")
                 input(f"{CYAN}Press any key to continue. >>> {CRES}")
                 return
+            
             elif is_guess_correct(guess, word): # The word isn't complete yet, but they correctly guessed a letter.
                 print(f"\n{GRN}{BOLD}Congratulations! {SRES}You guessed one of the letters.")
                 guessed_letters.append(guess)
                 correct_guessed_letters.append(guess)
                 input(f"{CYAN}Press any key to continue. >>> {CRES}")
+
             else: # The letter is not found in the word.
                 print(f"{YEL}{BOLD}\n" + guess, f"{RED}was not part of the word.{SRES}")
                 input(f"{CYAN}Press any key to continue. >>> {CRES}")
@@ -139,7 +141,8 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
     
 def main():
     letters = list(string.ascii_lowercase)
-    frames = group_frames(read_file(FRAMES_FILE), "#")
+    frames = group_frames(open(FRAMES_FILE, "r").readlines(), "#") # Read the list of all lines then seperate into frames.
+
     while (True): # The game will go on indefinitely until they choose to quit.
         if menu(): play_game(letters, frames)
         else: sys.exit()
