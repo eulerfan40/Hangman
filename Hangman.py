@@ -1,212 +1,148 @@
-import os
-import sys
-import random
+import os, sys, random, string
 from typing import List # For parameter type hints of Lists of strings.
-from sty import fg, bg, ef, rs # For color coding.
+from sty import fg, ef # For cross-platform color coding.
 
-OS_IS_WINDOWS = (sys.platform == "win32")
+OS_IS_WINDOWS = (sys.platform == "win32") # Needed for a check in the cross-platform clear screen function.
 
-#Resets
-CRESET = fg.rs # Style reset
-SRESET = ef.rs # Color reset
-RESET = CRESET + SRESET # Both resets at once
-#Colors
-RED = fg.red
-BLUE = fg.blue
-GREEN = fg.green
-YELLOW = fg.yellow
-MAGENTA = fg.magenta
-CYAN = fg.cyan
-# Styles
-BOLD = ef.bold
-ITALIC = ef.italic
-UNDERL = ef.underl
+FRAMES_FILE, WORDS_FILE = "Hangman/frames.txt", "Hangman/words.txt"
 
-def set_letters(letters_file: str, letter_list: List[str]):
-    with open(letters_file, "r") as file:
-        for line in file: # This assumes there aren't any extra empty lines in the file.
-            letter = line.split()[0] # To ignore \n after each letter.
-            letter = letter.lower()
-            letter_list.append(letter) # This will directly modify the passed in letter_list (as in passing by reference).
+CRES, SRES, RES = fg.rs, ef.rs, fg.rs + ef.rs # Resets: color-only, style-only, Both.
+RED, BLU, GRN, YEL, MAG, CYAN = fg.red, fg.blue, fg.green, fg.yellow, fg.magenta, fg.cyan # Colors
+BOLD, ITAL, UNDL = ef.bold, ef.italic, ef.underl # Styles
 
-def set_frames(frames_file: str, frame_exit: str, frame_list: List[str]):
-    buffer = "" # We need a buffer since we are going to append multiple lines at once.
-    with open(frames_file, "r") as file:
-        for line in file:
+def read_file(file_name: str) -> List[str]:
+    return [line.lower() for line in open(file_name, "r")] # Return list of lines, all lowercase.
+
+def group_frames(frame_list: List[str],  frame_exit: str) -> List[str]: # 
+    result, buffer = [], "" # We need a buffer since we are going to append multiple lines at once.
+    for line in frame_list:
             if line.strip() == frame_exit: # This assumes the frame end char is on its own line.
-                buffer = buffer.removesuffix("\n") # Remove the \n from last line.
-                frame_list.append(buffer) # This will directly modify the passed in frame_list.
-                buffer = "" # Reset the buffer
+                result.append(buffer.rstrip("\n")) # Directly modify the passed in frame_list. Remove the extra \n.
+                buffer = "" # Reset the buffer.
             else:
                 buffer += line
-
-def get_rand_word(words_file: str) -> str:
-    with open(words_file, "r") as file:
-        words = file.readlines() # Read all the words into a list.
-        word = random.choice(words).strip() # Pick a random word with the trailing \n removed.
-        return word # The word at that random index of the word bank is returned to the caller.
+    return result
 
 def clear_screen():
-    if OS_IS_WINDOWS:
-        os.system("cls")
-    else:
-        os.system("clear")
+    if OS_IS_WINDOWS: os.system("cls")
+    else: os.system("clear")
 
-def title(color: str = RESET, end: str = "\n"):
+def title(color: str = RES, end: str = "\n"):
+    clear_screen()
     print(color + "***************************")
     print(" H   A   N   G   M   A   N")
-    print("***************************" + RESET, end = end) # If end parameter doesn't include \n, it will not \n.
+    print("***************************" + RES, end = end) # If end is passed in, \n must be specified.
 
 def menu() -> bool:
     while (True):
-        clear_screen()
-        title(BLUE + BOLD)
-        print(f"\n{BOLD}{MAGENTA}Welcome to hangman. You have two options:")
-        print(f"\n1 - {SRESET}{YELLOW}Play")
-        print(f"{BOLD}{MAGENTA}2 - {SRESET}{YELLOW}Quit")
+        title(BLU + BOLD)
+        print(f"\n{BOLD}{MAG}Welcome to hangman. You have two options:")
+        print(f"\n1 - {SRES}{YEL}Play")
+        print(f"{BOLD}{MAG}2 - {SRES}{YEL}Quit")
+        answer = input(f"\n{SRES}{CYAN}Please choose an option. >>> {CRES}")
 
-        answer = input(f"\n{SRESET}{CYAN}Please choose an option. >>> {CRESET}")
         # Allow for both 1 & 2 as answers and any variation of "Play" & "Quit".
-        if (answer != "1" and answer != "2" and answer.lower() != "play" and answer != "quit"): # Handle invalid inputs.
-            print(f"\n{RED}Please input either 1 or 2, or type {BOLD}{CRESET}\"Play\"{SRESET}{RED} or {BOLD}{CRESET}\"Quit\"")
-            input(f"{SRESET}{CYAN}Press any key to continue >>> {CRESET}")
+        # The user's input was invalid.
+        if answer != "1" and answer != "2" and answer.lower() != "play" and answer != "quit":
+            print(f"\n{RED}Please input either 1 or 2, or type {BOLD}{CRES}\"Play\"{SRES}{RED} or {BOLD}{CRES}\"Quit\"")
+            input(f"{SRES}{CYAN}Press any key to continue >>> {CRES}")
             continue
-
-        elif (answer == "1" or answer.lower() == "play"):
+        # The user chose to play.    
+        elif answer == "1" or answer.lower() == "play":
             return True
-        
-        elif (answer == "2" or answer.lower() == "quit"):
-            print(f"{BOLD}{MAGENTA}\nGoodbye!{RESET}")
+        # The user chose to end the program.
+        elif answer == "2" or answer.lower() == "quit":
+            print(f"{BOLD}{MAG}\nGoodbye!{RES}")
             return False
 
 # This function checks if all the letters in an input string are in the allowed letter list.
-def input_valid(input: str, allowed_chars: List[str]) -> bool:
-    return all(char in allowed_chars for char in input) # Assume the for loop executes first.
+def is_input_valid(input: str, allowed_chars: List[str]) -> bool:
+    return all(char in allowed_chars for char in input)
 
 # This function checks if a guessed letter is part of the word.
-def validate_guess(guess: str, word: str) -> bool:
-    for letter in word:
-        if (guess.lower() == letter.lower()):
-            return True        
-    return False
+def is_guess_correct(guess: str, word: str) -> bool:
+    return any(guess.lower() == letter.lower() for letter in word)
 
 # Display the frame at the specified index with the option to change the end parameter of print().
-def show_frame(index: int, frame_list: List[str], color: str = RESET, end: str = "\n"):
-    print(color + frame_list[index] + RESET, end = end) # If end parameter doesn't include \n, it will not \n.
+def show_frame(index: int, frame_list: List[str], color: str = RES, end: str = "\n"):
+    print(color + frame_list[index] + RES, end = end) # If end is passed in, \n must be specified.
 
 # Return a string of the word with all letters hidden except those which have been correctly guessed.
-def hidden_word(word: str, correct_guessed_letters: str, hidden_symbol: str = "_", letter_color: str = RESET) -> str:
-    result = ""
-    for letter in word:
-        char_found = False
-        for char in correct_guessed_letters:
-            if (char == letter):
-                char_found = True
-                result += letter_color + char + " " + RESET
-                break
-        if (char_found != True):
-            result += hidden_symbol + " " + RESET
-    return result
+def hidden_word(word: str, correct_guessed_letters: str, hidden_symbol: str = "_", letter_color: str = RES) -> str:
+    return "".join(f"{letter_color}{letter} {RES}" if letter in correct_guessed_letters # Letter found.
+                   else f"{hidden_symbol} {RES}" # Letter not found. Print the hidden symbol instead.
+                   for letter in word # Do the above for every letter in the word.
+                   ).rstrip(" ") # Get rid of the extra space at the end of the returned string.
 
-def get_guessed_letters(guessed_letters: List[str], seperator: str = "|", letter_color: str = RESET) -> str:
-    result = ""
-    counter = 0
-    for letter in guessed_letters:
-        if (counter == len(guessed_letters) - 1): # The last letter should not have a seperator after it.
-            result += letter_color + letter + RESET
-        else:
-            result += letter_color + letter + " " + RESET + seperator + " " + RESET
-        counter += 1
-    return result
+# Return a string of all the letters guessed with seperators between each one.
+def get_guessed_letters(guessed_letters: List[str], seperator: str = "|", letter_color: str = RES) -> str:
+    # Print a letter followed by the seperator for every letter that they've guessed.
+    return "".join(f"{letter_color}{letter} {RES}{seperator} {RES}" for letter in guessed_letters
+                   ).rstrip(f" {RES}{seperator} {RES}") # Remove the extra seperator.
 
 # Return whether or not a letter has already been guessed.
 def already_guessed(char: str, guessed_letters: List[str]) -> bool:
-    for letter in guessed_letters:
-        if (char == letter):
-            return True
-    return False
+    return (char in guessed_letters)
 
-def play_game(words_file: str, allowed_letters: List[str], frame_list: List[str], allowed_guesses: int = 6):
-    guess = ""
-    guesses = 0
-    guessed_letters = []
-    correct_guessed_letters = []
-    word = get_rand_word(words_file) # Set random word.
+def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses: int = 6):
+    guess = "" # The player begins the game having not guessed the word.
+    guesses = 0 # The player begins the game haveing not made any guesses.
+    guessed_letters = [] # The player begins the game having not guessed any letters.
+    correct_guessed_letters = [] # The player begins the word having not correctly guessed any letters.
+    word = random.choice(read_file(WORDS_FILE)) # Set random word.
 
     while (guesses < allowed_guesses):
-        incorrect_guesses = len(guessed_letters) - len(correct_guessed_letters)
-        frame_index = incorrect_guesses
+        frame_index = len(guessed_letters) - len(correct_guessed_letters) # Frame index = incorrect guesses
+        # In round display the title, hangman graphic, hidden word, guessed letters, and incorrect guesses left.
+        title(BLU + BOLD, end = "\n\n")
+        show_frame(frame_index, frame_list, BOLD + GRN, "\n\n") # Show the hangman graphic.
+        print(hidden_word(word, correct_guessed_letters, f"{BOLD}_", GRN + BOLD + ITAL)) # Show word with missing letters.
+        if guesses > 0: # Show the previously guessed letters if there are any.
+            print(f"\n{BOLD}{MAG}Guessed Letters: {SRES}" + get_guessed_letters(guessed_letters, f"{BOLD}{MAG}|", YEL + ITAL))
+        print(f"\n{BOLD}{MAG}Guesses Left: {SRES}{YEL}{ITAL}{str(allowed_guesses - guesses)}{RES}") # Show wrong guesses left.
+        guess = input(f"{CYAN}\nWhat is your guess? >>> {CRES}") 
 
-        clear_screen()
-        title(BLUE + BOLD, end = "\n\n")
-        show_frame(frame_index, frame_list, BOLD + GREEN) # Show the hangman graphic.
-        print("\n" + hidden_word(word, correct_guessed_letters, BOLD + "_", GREEN + BOLD + ITALIC)) # Show the word with the missing letters.
-        # Show the previously guessed letters if there are any.
-        if (guesses > 0): print(f"\n{BOLD}{MAGENTA}Guessed Letters: {SRESET}" + get_guessed_letters(guessed_letters, BOLD + MAGENTA + "|", YELLOW + ITALIC))
-        print(f"\n{BOLD}{MAGENTA}Guesses Left: {SRESET}{YELLOW}{ITALIC}{str(allowed_guesses - guesses)}{RESET}") # Show how many wrong guesses left.
-
-        guess = input(f"{CYAN}\nWhat is your guess? >>> {CRESET}")
-
-        # Check whether it is a valid new guess and is one letter.
-        if ((input_valid(guess.lower(), allowed_letters) == True) and (len(guess) == 1) and (already_guessed(guess, guessed_letters) == False)):
-            
-            # The letter is found in the word.
-            if (validate_guess(guess, word) == True):
-                print(f"\n{GREEN}{BOLD}Congratulations! {SRESET}You guessed one of the letters.")
+        is_valid_input = is_input_valid(guess.lower(), allowed_letters) and len(guess) == 1
+        is_new_guess = not already_guessed(guess, guessed_letters)
+        
+        if not is_new_guess: # They've already guessed this letter
+            print(f"\n{YEL}{BOLD}You already guessed that letter.{SRES}")
+            input(f"{CYAN}Press any key to continue. >>> {CRES}")
+        if not is_valid_input: # It's not a valid input and/or it's longer than one letter.
+            print(f"\n{RED}{BOLD}Please input a valid letter.{SRES}")
+            input(f"{CYAN}Press any key to continue. >>> {CRES}")
+        if is_valid_input and is_new_guess: # Check whether it is a valid new guess.
+            if is_guess_correct(guess, word) and all(letter in correct_guessed_letters for letter in word): # Word complete.
+                print(f"\n{GRN}{BOLD}Congratulations! {SRES}You successfully guessed the word.")
+                input(f"{CYAN}Press any key to continue. >>> {CRES}")
+                return
+            elif is_guess_correct(guess, word): # The word isn't complete yet, but they correctly guessed a letter.
+                print(f"\n{GRN}{BOLD}Congratulations! {SRES}You guessed one of the letters.")
                 guessed_letters.append(guess)
                 correct_guessed_letters.append(guess)
-                input(f"{CYAN}Press any key to continue. >>> {CRESET}")
-
-                # There are no hidden symbols therefore the entire word matches. They won, and the game ends.
-                if all(letter in correct_guessed_letters for letter in word): # Treat as if the for loop executes first. 
-                    print(f"\n{GREEN}{BOLD}Congratulations! {SRESET}You successfully guessed the word.")
-                    input(f"{CYAN}Press any key to continue. >>> {CRESET}")
-                    return
+                input(f"{CYAN}Press any key to continue. >>> {CRES}")
             else: # The letter is not found in the word.
-                print(f"{YELLOW}{BOLD}\n" + guess, f"{RED}was not part of the word.{SRESET}")
-                input(f"{CYAN}Press any key to continue. >>> {CRESET}")
+                print(f"{YEL}{BOLD}\n" + guess, f"{RED}was not part of the word.{SRES}")
+                input(f"{CYAN}Press any key to continue. >>> {CRES}")
                 guessed_letters.append(guess)
                 guesses += 1
 
-        # It's a valid input and is one letter, but they already guessed the letter (regardless of whether or not it was correct).
-        elif((input_valid(guess.lower(), allowed_letters) == True) and (len(guess) == 1) and (already_guessed(guess, guessed_letters) == True)):
-            print(f"\n{YELLOW}{BOLD}You already guessed that letter.{SRESET}")
-            input(f"{CYAN}Press any key to continue. >>> {CRESET}")
-
-        else: # It's not a valid input and/or it's longer than one letter.    
-            print(f"\n{RED}{BOLD}Please input a valid letter.{SRESET}")
-            input(f"{CYAN}Press any key to continue. >>> {CRESET}")
-
-    # The while loop broke which means they used all their allowed_guesses and still didn't guess the word.
-    frame_index = allowed_guesses # The last frame.
-
-    clear_screen()
-    title(BLUE + BOLD, end = "\n\n")
-    show_frame(frame_index, frame_list, BOLD + RED)
-    print("\n" + hidden_word(word, correct_guessed_letters, RED + BOLD + "_", GREEN + BOLD + ITALIC)) # Show the letters they did get right and in what positions.
-    print(f"{BOLD}{MAGENTA}Guessed Letters: {SRESET}" + get_guessed_letters(guessed_letters, BOLD + MAGENTA + "|", YELLOW + ITALIC)) # Show all the letters they tried.
+    frame_index = allowed_guesses # They used all their allowed_guesses and didn't guess the word. Show the last frame.
+    # Recap by displaying the title, hangman graphic, hidden word, guessed letters, and the word itself.
+    title(BLU + BOLD, end = "\n\n")
+    show_frame(frame_index, frame_list, BOLD + RED, "\n\n") # Show the hangman graphic.
+    print("\n" + hidden_word(word, correct_guessed_letters, f"{BOLD}{RED}_", GRN + BOLD + ITAL)) # Position of missed letters.
+    print(f"{BOLD}{MAG}Guessed Letters: {SRES}" + get_guessed_letters(guessed_letters, f"{BOLD}{MAG}|", YEL + ITAL))
     print(f"\n{BOLD}{RED}You were hanged on account of terrible word guessing ability.")
-    print(f"{MAGENTA}The word was: {YELLOW}{ITALIC}{UNDERL}{word}{RESET}") # Show them the word.
-    print(f"{MAGENTA}Better luck next time?") # Tease.
-    input(f"\n{CYAN}Press any key to continue. >>> {CRESET}")
+    print(f"{MAG}The word was: {YEL}{ITAL}{UNDL}{word}{RES}") # Show them the word.
+    print(f"{MAG}Better luck next time?")
+    input(f"\n{CYAN}Press any key to continue. >>> {CRES}")
     
 def main():
-    letters_file = "Hangman/letters.txt"
-    letters = []
-    set_letters(letters_file, letters)
-
-    frames_file = "Hangman/frames.txt"
-    frames = []
-    set_frames(frames_file, "#", frames)
-
-    words_file = "Hangman/words.txt"
-    
+    letters = list(string.ascii_lowercase)
+    frames = group_frames(read_file(FRAMES_FILE), "#")
     while (True): # The game will go on indefinitely until they choose to quit.
-        if (menu() == False): # Menu returns False if they choose to quit. Otherwise the game starts.
-            break
-        play_game(words_file, letters, frames)
+        if menu(): play_game(letters, frames)
+        else: sys.exit()
 
-    sys.exit()
-
-if __name__ == "__main__":
-    main()
+main()
