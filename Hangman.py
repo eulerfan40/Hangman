@@ -24,8 +24,7 @@ def group_frames(frame_list: List[str],  frame_exit: str) -> List[str]: #
     return result
 
 def clear_screen():
-    if OS_IS_WINDOWS: os.system("cls")
-    else: os.system("clear")
+    os.system("cls" if OS_IS_WINDOWS else "clear")
 
 def title(color: str = RES, end: str = "\n"):
     clear_screen()
@@ -146,5 +145,3 @@ def main():
         else: sys.exit()
 
 main()
-
-# Test
