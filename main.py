@@ -147,4 +147,4 @@ def main():
         if menu(): play_game(letters, frames)
         else: sys.exit()
 
-main()
+if __name__ == "__main__": main()
