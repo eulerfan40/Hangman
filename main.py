@@ -87,12 +87,13 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
     guesses = 0 # The player begins the game haveing not made any guesses.
     guessed_letters = [] # The player begins the game having not guessed any letters.
     correct_guessed_letters = [] # The player begins the word having not correctly guessed any letters.
-    word = random.choice([line.rstrip("\n") for line in open(WORDS_FILE, "r")]) # Set random word.
-
+    with open(WORDS_FILE, "r") as file:
+        word = random.choice([line.rstrip("\n") for line in file]) # Set random word.
+    
     while (guesses < allowed_guesses):
-        frame_index = len(guessed_letters) - len(correct_guessed_letters) # Frame index = incorrect guesses
+        frame_index = len(guessed_letters) - len(correct_guessed_letters) # Frame index = incorrect guesses.
         # In round display the title, hangman graphic, hidden word, guessed letters, and incorrect guesses left.
-        title(BLU + BOLD, end = "\n\n")
+        title(BLU + BOLD, end = "\n\n")        
         show_frame(frame_index, frame_list, BOLD + GRN, "\n\n") # Show the hangman graphic.
         print(hidden_word(word, correct_guessed_letters, f"{BOLD}_", GRN + BOLD + ITAL)) # Show word with missing letters.
         if guesses > 0: # Show the previously guessed letters if there are any.
@@ -102,7 +103,7 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
 
         is_valid_input = is_input_valid(guess.lower(), allowed_letters) and len(guess) == 1
         is_new_guess = not already_guessed(guess, guessed_letters)        
-        if not is_new_guess: # They've already guessed this letter
+        if not is_new_guess: # They've already guessed this letter.
             print(f"\n{YEL}{BOLD}You already guessed that letter.{SRES}")
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
 
@@ -111,15 +112,13 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
 
         if is_valid_input and is_new_guess: # Check whether it is a valid new guess.
-            if is_guess_correct(guess, word) and all(letter in correct_guessed_letters for letter in word): # Word complete.
-                print(f"\n{GRN}{BOLD}Congratulations! {SRES}You successfully guessed the word.")
-                input(f"{CYAN}Press any key to continue. >>> {CRES}")
-                return
-            
-            elif is_guess_correct(guess, word): # The word isn't complete yet, but they correctly guessed a letter.
-                print(f"\n{GRN}{BOLD}Congratulations! {SRES}You guessed one of the letters.")
+            if is_guess_correct(guess, word): # Their guess is correct.
                 guessed_letters.append(guess)
                 correct_guessed_letters.append(guess)
+                word_complete = all(letter in correct_guessed_letters for letter in word) # This is the win state.
+                print(f"\n{GRN}{BOLD}Congratulations! {SRES}You successfully guessed the word."
+                      if word_complete else f"\n{GRN}{BOLD}Congratulations! {SRES}You guessed one of the letters.")
+                if word_complete: return
                 input(f"{CYAN}Press any key to continue. >>> {CRES}")
 
             else: # The letter is not found in the word.
@@ -147,4 +146,5 @@ def main():
         if menu(): play_game(letters, frames)
         else: sys.exit()
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
