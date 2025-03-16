@@ -93,7 +93,8 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
     while (guesses < allowed_guesses):
         frame_index = len(guessed_letters) - len(correct_guessed_letters) # Frame index = incorrect guesses.
         # In round display the title, hangman graphic, hidden word, guessed letters, and incorrect guesses left.
-        title(BLU + BOLD, end = "\n\n")        
+        title(BLU + BOLD, end = "\n\n")  
+        print(word)
         show_frame(frame_index, frame_list, BOLD + GRN, "\n\n") # Show the hangman graphic.
         print(hidden_word(word, correct_guessed_letters, f"{BOLD}_", GRN + BOLD + ITAL)) # Show word with missing letters.
         if guesses > 0: # Show the previously guessed letters if there are any.
@@ -106,21 +107,21 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
         if not is_new_guess: # They've already guessed this letter.
             print(f"\n{YEL}{BOLD}You already guessed that letter.{SRES}")
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
-
         if not is_valid_input: # It's not a valid input and/or it's longer than one letter.
             print(f"\n{RED}{BOLD}Please input a valid letter.{SRES}")
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
-
+            
         if is_valid_input and is_new_guess: # Check whether it is a valid new guess.
             if is_guess_correct(guess, word): # Their guess is correct.
                 guessed_letters.append(guess)
-                correct_guessed_letters.append(guess)
-                word_complete = all(letter in correct_guessed_letters for letter in word) # This is the win state.
-                print(f"\n{GRN}{BOLD}Congratulations! {SRES}You successfully guessed the word."
-                      if word_complete else f"\n{GRN}{BOLD}Congratulations! {SRES}You guessed one of the letters.")
-                if word_complete: return
-                input(f"{CYAN}Press any key to continue. >>> {CRES}")
-
+                correct_guessed_letters.append(guess)            
+            if all(letter in correct_guessed_letters for letter in word): # This is the win state.
+                    print(f"\n{GRN}{BOLD}Congratulations! {SRES}You successfully guessed the word.")
+                    input(f"{CYAN}Press any key to continue. >>> {CRES}")
+                    return
+            elif is_guess_correct(guess, word): # They got it correct but there are still unguessed letters in the word.
+                    print(f"\n{GRN}{BOLD}Congratulations! {SRES}You guessed one of the letters.")
+                    input(f"{CYAN}Press any key to continue. >>> {CRES}")
             else: # The letter is not found in the word.
                 print(f"{YEL}{BOLD}\n" + guess, f"{RED}was not part of the word.{SRES}")
                 input(f"{CYAN}Press any key to continue. >>> {CRES}")
@@ -146,5 +147,4 @@ def main():
         if menu(): play_game(letters, frames)
         else: sys.exit()
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
