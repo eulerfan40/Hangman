@@ -50,7 +50,7 @@ def menu() -> bool:
         
         # The user chose to end the program.
         elif answer == "2" or answer.lower() == "quit":
-            print(f"{BOLD}{MAG}\nGoodbye!{RES}")
+            print(f"{BOLD}{MAG}\nGoodbye!\n{RES}")
             return False
 
 # This function checks if all the letters in an input string are in the allowed letter list.
@@ -93,8 +93,7 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
     while (guesses < allowed_guesses):
         frame_index = len(guessed_letters) - len(correct_guessed_letters) # Frame index = incorrect guesses.
         # In round display the title, hangman graphic, hidden word, guessed letters, and incorrect guesses left.
-        title(BLU + BOLD, end = "\n\n")  
-        print(word)
+        title(BLU + BOLD, end = "\n\n")
         show_frame(frame_index, frame_list, BOLD + GRN, "\n\n") # Show the hangman graphic.
         print(hidden_word(word, correct_guessed_letters, f"{BOLD}_", GRN + BOLD + ITAL)) # Show word with missing letters.
         if guesses > 0: # Show the previously guessed letters if there are any.
@@ -110,7 +109,7 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
         if not is_valid_input: # It's not a valid input and/or it's longer than one letter.
             print(f"\n{RED}{BOLD}Please input a valid letter.{SRES}")
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
-            
+
         if is_valid_input and is_new_guess: # Check whether it is a valid new guess.
             if is_guess_correct(guess, word): # Their guess is correct.
                 guessed_letters.append(guess)
@@ -147,4 +146,5 @@ def main():
         if menu(): play_game(letters, frames)
         else: sys.exit()
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
