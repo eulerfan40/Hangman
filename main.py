@@ -7,7 +7,7 @@ OS_IS_WINDOWS = (sys.platform == "win32") # Needed for a check in the cross-plat
 FRAMES_FILE, WORDS_FILE = "files/frames.txt", "files/words.txt"
 
 CRES, SRES, RES = fg.rs, ef.rs, fg.rs + ef.rs # Resets: color-only, style-only, Both.
-RED, BLU, GRN, YEL, MAG, CYAN = fg.red, fg.blue, fg.green, fg.yellow, fg.magenta, fg.cyan # Colors
+RED, BLU, GRN, YLW, MAG, CYAN = fg.red, fg.blue, fg.green, fg.yellow, fg.magenta, fg.cyan # Colors
 BOLD, ITAL, UNDL = ef.bold, ef.italic, ef.underl # Styles
 
 def group_frames(frame_list: List[str],  frame_exit: str) -> List[str]: # 
@@ -33,8 +33,8 @@ def menu() -> bool:
     while (True):
         title(BLU + BOLD)
         print(f"\n{BOLD}{MAG}Welcome to hangman. Can you guess the hidden word?")
-        print(f"\n1 - {SRES}{YEL}Play")
-        print(f"{BOLD}{MAG}2 - {SRES}{YEL}Quit")
+        print(f"\n1 - {SRES}{YLW}Play")
+        print(f"{BOLD}{MAG}2 - {SRES}{YLW}Quit")
         answer = input(f"\n{SRES}{CYAN}Please choose an option. >>> {CRES}")
 
         # Allow for both 1 & 2 as answers and any variation of "Play" & "Quit".
@@ -94,17 +94,17 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
         frame_index = len(guessed_letters) - len(correct_guessed_letters) # Frame index = incorrect guesses.
         # In round display the title, hangman graphic, hidden word, guessed letters, and incorrect guesses left.
         title(BLU + BOLD, end = "\n\n")
-        show_frame(frame_index, frame_list, BOLD + GRN, "\n\n") # Show the hangman graphic.
+        show_frame(frame_index, frame_list, BOLD + GRN if frame_index < 4 else BOLD + YLW, "\n\n") # Show the hangman graphic.
         print(hidden_word(word, correct_guessed_letters, f"{BOLD}_", GRN + BOLD + ITAL)) # Show word with missing letters.
         if guesses > 0: # Show the previously guessed letters if there are any.
-            print(f"\n{BOLD}{MAG}Guessed Letters: {SRES}" + get_guessed_letters(guessed_letters, f"{BOLD}{MAG}|", YEL + ITAL))
-        print(f"\n{BOLD}{MAG}Guesses Left: {SRES}{YEL}{ITAL}{str(allowed_guesses - guesses)}{RES}") # Show wrong guesses left.
+            print(f"\n{BOLD}{MAG}Guessed Letters: {SRES}" + get_guessed_letters(guessed_letters, f"{BOLD}{MAG}|", YLW + ITAL))
+        print(f"\n{BOLD}{MAG}Guesses Left: {SRES}{YLW}{ITAL}{str(allowed_guesses - guesses)}{RES}") # Show wrong guesses left.
         guess = input(f"{CYAN}\nWhat is your guess? >>> {CRES}") 
 
         is_valid_input = is_input_valid(guess.lower(), allowed_letters) and len(guess) == 1
         is_new_guess = not already_guessed(guess, guessed_letters)        
         if not is_new_guess: # They've already guessed this letter.
-            print(f"\n{YEL}{BOLD}You already guessed that letter.{SRES}")
+            print(f"\n{YLW}{BOLD}You already guessed that letter.{SRES}")
             input(f"{CYAN}Press any key to continue. >>> {CRES}")
         if not is_valid_input: # It's not a valid input and/or it's longer than one letter.
             print(f"\n{RED}{BOLD}Please input a valid letter.{SRES}")
@@ -122,7 +122,7 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
                     print(f"\n{GRN}{BOLD}Congratulations! {SRES}You guessed one of the letters.")
                     input(f"{CYAN}Press any key to continue. >>> {CRES}")
             else: # The letter is not found in the word.
-                print(f"{YEL}{BOLD}\n" + guess, f"{RED}was not part of the word.{SRES}")
+                print(f"{YLW}{BOLD}\n" + guess, f"{RED}was not part of the word.{SRES}")
                 input(f"{CYAN}Press any key to continue. >>> {CRES}")
                 guessed_letters.append(guess)
                 guesses += 1
@@ -132,9 +132,9 @@ def play_game(allowed_letters: List[str], frame_list: List[str], allowed_guesses
     title(BLU + BOLD, end = "\n\n")
     show_frame(frame_index, frame_list, BOLD + RED, "\n\n") # Show the hangman graphic.
     print("\n" + hidden_word(word, correct_guessed_letters, f"{BOLD}{RED}_", GRN + BOLD + ITAL)) # Position of missed letters.
-    print(f"{BOLD}{MAG}Guessed Letters: {SRES}" + get_guessed_letters(guessed_letters, f"{BOLD}{MAG}|", YEL + ITAL))
+    print(f"{BOLD}{MAG}Guessed Letters: {SRES}" + get_guessed_letters(guessed_letters, f"{BOLD}{MAG}|", YLW + ITAL))
     print(f"\n{BOLD}{RED}You were hanged on account of terrible word guessing ability.")
-    print(f"{MAG}The word was: {YEL}{ITAL}{UNDL}{word}{RES}") # Show them the word.
+    print(f"{MAG}The word was: {YLW}{ITAL}{UNDL}{word}{RES}") # Show them the word.
     print(f"{MAG}Better luck next time?")
     input(f"\n{CYAN}Press any key to continue. >>> {CRES}")
     
